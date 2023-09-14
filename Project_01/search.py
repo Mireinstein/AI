@@ -87,6 +87,25 @@ def depthFirstSearch(problem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
+    node = (problem.getStartState(),None,0);
+    frontier = util.Stack();
+    frontier.push(node);
+    explored= set();
+    Path=[];
+    while not problem.isGoalState(node[0]):
+        if frontier.isEmpty():
+            # return failure
+            return []
+        node=frontier.pop();
+        Path.append(node[1]);
+        if problem.isGoalState(node[0]):
+            # return the path
+            return Path;
+        if node not in explored:
+            explored.add(node);
+            for child in problem.getSuccessors(node[0]):
+                frontier.push(child)
+    "YOUR CODE ENDS HERE"
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem):
