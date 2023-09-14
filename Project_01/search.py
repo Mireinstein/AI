@@ -177,6 +177,48 @@ def breadthFirstSearch(problem):
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
+    # Quintuple : our old info, and fifth element = path cost
+    node = (problem.getStartState(), None, 0, None, 0)
+    frontier = util.PriorityQueue()
+    frontier.push(node, node[4])
+    # A set containing visited states
+    explored = set()
+    # The path we will return
+    path = []
+    # Keep looking for the goal state
+    while not problem.isGoalState(node[0]):
+        if frontier.isEmpty():
+            # return failure
+            return []
+        node = frontier.pop()
+        # Path.append(node[1]);
+        if problem.isGoalState(node[0]):
+            # Backtrack to get the solution
+            # append last action
+            path.append(node[1])
+            # as long as action is not none.
+            while node[3] is not None:
+                parent = node[3]
+                action = parent[1]
+                # Don't take None as an action.
+                if action is not None:
+                    path.append(action)
+                node = parent
+            # return the path
+            path.reverse()
+            return path
+        # if we already visited this state, don't visit it again.
+        if node[0] not in explored:
+            # Add a visited state to the explored set.
+            explored.add(node[0])
+            # Add all children to the frontier
+            for child in problem.getSuccessors(node[0]):
+                # calculate the cumulative path cost by adding previous node's path cost to child's individual cost
+                path_cost = node[4] + child[2]
+                # Add the quintuple representing (successor, action, cost, Parent, and path_cost)
+                frontier.push((child[0], child[1], child[2], node, path_cost), path_cost)
+    return path
+
     util.raiseNotDefined()
 
 
