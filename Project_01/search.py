@@ -90,29 +90,36 @@ def depthFirstSearch(problem):
     """
     "*** YOUR CODE HERE ***"
 
-    node = (problem.getStartState(), None, 0)
+    node = (problem.getStartState(), None, 0.0, None)
     frontier = util.Stack()
     frontier.push(node)
     explored = set()
-    path = []
+
+    if problem.isGoalState(node[0]):
+        return []
 
     while not problem.isGoalState(node[0]):
         if frontier.isEmpty():
-            print("Failure")
             return []
 
         node = frontier.pop()
-        path.append(node[1])
 
         if problem.isGoalState(node[0]):
-            print ("Success")
+            path = [node[1]]
+            while node[3] is not None:
+                parent = node[3]
+                action = parent[1]
+                if action is not None: path.append(action)
+                node = parent
+
+            path.reverse()
             return path
 
-        if node not in explored:
-            explored.add(node)
+        if node[0] not in explored:
+            explored.add(node[0])
             for child in problem.getSuccessors(node[0]):
-                frontier.push(child)
-                # frontier.push((child[0], child[1], child[2], node))
+                # (successor, action, stepCost)
+                frontier.push((child[0], child[1], child[2], node))
     # end of my code
 
     util.raiseNotDefined()
