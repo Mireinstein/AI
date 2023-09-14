@@ -19,6 +19,7 @@ Pacman agents (in searchAgents.py).
 
 import util
 
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -70,7 +71,8 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
@@ -86,37 +88,59 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
-    node = (problem.getStartState(),None,0);
-    frontier = util.Stack();
-    frontier.push(node);
-    explored= set();
-    Path=[];
+    # inititialize starting problem with cost of zero and game initial state
+    node = (problem.getStartState(), None, 0, None);
+    frontier = util.Stack()
+    frontier.push(node)
+    # A set containing visited states
+    explored = set()
+    # The path we will return
+    path = []
+    # Keep looking for the goal state
     while not problem.isGoalState(node[0]):
         if frontier.isEmpty():
             # return failure
             return []
-        node=frontier.pop();
-        Path.append(node[1]);
+        node = frontier.pop()
+        # Path.append(node[1]);
         if problem.isGoalState(node[0]):
+            # Backtrack to get the solution
+            # append last action
+            path.append(node[1])
+            # as long as action is not none.
+            while node[3] is not None:
+                parent = node[3]
+                action = parent[1]
+                # Don't take None as an action.
+                if action is not None:
+                    path.append(action)
+                node = parent
             # return the path
-            return Path;
-        if node not in explored:
-            explored.add(node);
+            path.reverse()
+            return path
+        # if we already visited this state, don't visit it again.
+        if node[0] not in explored:
+            # Add a visited state to the explored set.
+            explored.add(node[0])
+            # Add all children to the frontier
             for child in problem.getSuccessors(node[0]):
-                frontier.push(child)
-    "YOUR CODE ENDS HERE"
+                # Add the quadruple representing (successor, action, cost, Parent)
+                frontier.push((child[0], child[1], child[2], node))
+    return path
     util.raiseNotDefined()
+
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
 
+
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -124,6 +148,7 @@ def nullHeuristic(state, problem=None):
     goal in the provided SearchProblem.  This heuristic is trivial.
     """
     return 0
+
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
