@@ -390,7 +390,35 @@ def cornersHeuristic(state, problem):
     walls = problem.walls  # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0  # Default to trivial solution
+    current_position = state[0]
+    visited = state[1]
+
+    # a list of unvisited corners made by XORing the set of all corners and the visited ones.
+    unvisited = list(set(corners) ^ set(visited))
+
+    # this method will return the manhattan distance between two points if 2 are passed
+    # current_position is a default argument
+    def manhattan_distance(point2, point1=current_position):
+        dist = abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
+        return dist
+
+    def recursiveH(cur_pos):
+        # if we have visited all the nodes, we're good
+        if len(unvisited) == 0:
+            return 0
+
+        elif len(unvisited) == 1:
+            # if we have one node left to visit, we can't visit it faster than the manhattan distance to it
+            return manhattan_distance(cur_pos, unvisited[0])
+
+        elif len(unvisited) > 1:
+            # if we have more than 1 node: visit the closest node, then visit the other closest nodes
+            # the recursive part updates our current position to that of the corner we just visited
+            # while also removing it.
+            unvisited.sort(key=lambda x: manhattan_distance(x, cur_pos))
+            return manhattan_distance(cur_pos, unvisited[0]) + recursiveH(unvisited.pop(0))
+
+    return recursiveH(current_position)
 
 
 class AStarCornersAgent(SearchAgent):
