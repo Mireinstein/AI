@@ -273,7 +273,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
                 # calculate the cumulative path cost by adding previous node's path cost to child's individual cost
                 path_cost = node[4] + child[2]
                 # Add the quintuple representing (successor, action, cost, Parent, path cost) with priority path-cost + heuristic.
-                frontier.push((child[0], child[1], child[2], node, path_cost), path_cost+ heuristic(child[0],problem))
+                frontier.push((child[0], child[1], child[2], node, path_cost), path_cost + heuristic(child[0],problem))
     return path
     util.raiseNotDefined()
 
