@@ -519,7 +519,53 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+
+    # a list of unvisited foods made by expressing the food grid as a list.
+    unvisited = foodGrid.asList()
+    right = position[0]
+    left = position[0]
+    top = position[1]
+    bottom = position[1]
+    for food in unvisited:
+        top, bottom = max(top, food[1]), min(bottom, food[1])
+        right, left = max(right, food[0]), min(left, food[0])
+
+    corners = [(left, bottom), (left, top), (right, bottom), (right, top)]
+
+    # this method will return the manhattan distance between two points if 2 are passed
+    # current_position is a default argument
+    def manhattan_distance(point2, point1):
+        dist = abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
+        return dist
+
+    diagonal_across_food_box = manhattan_distance(corners[0], corners[3])
+
+    # def weighter(point, someList):
+    #     dist = 0
+    #     average = 0
+    #     for coordinate in someList:
+    #         dist += manhattan_distance(coordinate, point)
+    #         average = dist / len(someList)
+    #
+    #     return average / ((diagonal_across_food_box/2) + 1)
+
+    def foodH(cur_pos, someList):
+        # if we have visited all the foods, we're good
+        if len(someList) == 0:
+            return 0
+
+        elif len(someList) == 1:
+            # if we have one food left to visit, we can't visit it faster than the manhattan distance to it
+            return manhattan_distance(cur_pos, someList[0])
+
+        elif len(someList) > 1:
+            # else visit the fa
+            maximum = 0
+            for element in someList:
+                maximum = max(maximum, manhattan_distance(cur_pos, element))
+            return maximum
+
+    return foodH(position, unvisited)
 
 
 class ClosestDotSearchAgent(SearchAgent):
