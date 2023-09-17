@@ -133,7 +133,7 @@ def depthFirstSearch(problem):
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    node = (problem.getStartState(), None, 0, None);
+    node = (problem.getStartState(), None, 0, None)
     frontier = util.Queue()
     frontier.push(node)
     # A set containing visited states

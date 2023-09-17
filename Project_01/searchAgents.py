@@ -519,7 +519,64 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+
+    # a list of unvisited foods made by expressing the food grid as a list.
+    unvisited = foodGrid.asList()
+
+    # this method will return the manhattan distance between two points if 2 are passed
+    # current_position is a default argument
+    def distance(point2, point1=position, distance_type='manhattan'):
+           return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
+
+    # def gridSearchDistance(grid, start, target):
+    #
+    #     # Each element in the queue is a triple (position, distance)
+    #     node = (start, 0)
+    #     frontier = util.Queue()
+    #     explored = set()
+    #     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    #     frontier.push(node)
+    #
+    #     (pos_x, pos_y) = start
+    #
+    #     while grid[pos_x][pos_y] != target:
+    #         if frontier.isEmpty():
+    #             return -1
+    #
+    #         node = frontier.pop()
+    #         (pos_x, pos_y) = node[0]
+    #
+    #         # Are we at the target? then done
+    #         if grid[pos_x][pos_y] == target:
+    #             return node[1]
+    #
+    #         if node[0] not in explored:
+    #             # Add a visited state to the explored set.
+    #             explored.add(node[0])
+    #
+    #             # Add all children to the frontier
+    #             for d in directions:
+    #                 new_x, new_y = pos_x + d[0], pos_y + d[1]
+    #                 new_position = (new_x, new_y)
+    #
+    #                 # Check if new_position is valid and not visited
+    #                 if problem.walls[new_x][new_y] is False:
+    #                     frontier.push((new_position, node[1] + 1))
+    #
+    #     # If the target is not reachable, return -1
+    #     return -1
+
+
+    def foodH(cur_pos, someList):
+        if len(someList) == 0:
+            return 0
+        if len(someList) == 1:
+            return distance(cur_pos, someList[0])
+        someList.sort(key=lambda x: distance(cur_pos, x) , reverse = True)
+        return distance(cur_pos, someList[0])
+
+
+    return foodH(position, unvisited)
 
 
 class ClosestDotSearchAgent(SearchAgent):
@@ -533,6 +590,7 @@ class ClosestDotSearchAgent(SearchAgent):
             self.actions += nextPathSegment
             for action in nextPathSegment:
                 legal = currentState.getLegalActions()
+                print ('actions',legal)
                 if action not in legal:
                     t = (str(action), str(currentState))
                     raise Exception('findPathToClosestDot returned an illegal move: %s!\n%s' % t)
@@ -552,7 +610,13 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
+
+        return search.breadthFirstSearch(problem)
+
+
         util.raiseNotDefined()
+
+
 
 
 class AnyFoodSearchProblem(PositionSearchProblem):
@@ -589,6 +653,18 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x, y = state
 
         "*** YOUR CODE HERE ***"
+
+
+        def distance(point2, point1):
+                return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
+
+        foodList = self.food.asList()
+        foodList.sort(key=lambda k: distance(state, k))
+
+        if len(foodList) == 0:
+            return True
+        return x == foodList[0][0] and y == foodList[0][1]
+
         util.raiseNotDefined()
 
 
