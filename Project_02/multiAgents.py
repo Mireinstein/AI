@@ -10,7 +10,7 @@
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
+import sys
 
 from util import manhattanDistance
 from game import Directions
@@ -74,7 +74,31 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        # Lists of food particles and ghosts
+        ghostList = successorGameState.getGhostPositions()
+        foodList = newFood.asList()
+
+        # function to return manhattan distance between two points
+        def distance(point2, point1, distance_type='manhattan'):
+            return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
+
+        # lowest value possible
+        minValue=-sys.maxsize-1
+
+        # if a ghost is close, assign the lowest value possible
+        for ghostLocation in ghostList:
+            if distance(newPos,ghostLocation)<3:
+                return minValue
+
+
+        for foodLocation in foodList:
+            for ghostLocation in ghostList:
+                if distance(foodLocation,ghostLocation)>4:
+                    return sys.maxsize
+
+        "End of code"
+        # return successorGameState.getScore()
+
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -135,6 +159,66 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
+        # if we have reached a winning state, there's no action to take
+        # if gameState.isWin() or gameState.isLose():
+        #     return None
+
+        # get the number of agents playing
+        numOfAgents=gameState.getNumAgents()
+
+        # Minimax function
+        def miniMax(self,gameState):
+            if gameState.isWin or gameState.isLose():
+                return scoreEvaluationFunction(gameState)
+
+            if self.depth % numOfAgents == 0:
+                return max([miniMax(successorState) for successorState in gameState.getLegalActions(self.depth % numOfAgents) ])
+
+            else:
+               return min([miniMax(successorState) for successorState in gameState.getLegalActions(self.depth % numOfAgents)])
+
+
+        # Get a list of legal actions for current player
+        legalActions = gameState.getLegalActions(self.depth % numOfAgents)
+
+        # if it's pacman's turn, maximize score
+        if self.depth%numOfAgents==0:
+            # temprary next state
+            bestSuccessorState=gameState.generateSuccessor(0,legalActions[0])
+            # temporary best score
+            bestScore=miniMax(self,bestSuccessorState)
+            # temporary best action
+            bestAction=legalActions[0]
+            # Loop through all actions and choose the best one
+            for action in legalActions:
+                currentSuccessorState=gameState.generateSuccessor(0, action)
+                currentScore=miniMax(self,currentSuccessorState)
+                if currentScore>bestScore:
+                    bestScore=currentScore
+                    bestAction=action
+
+            return bestAction
+
+        # if it's a ghost's turn, minimize score
+        else:
+            # temprary next state
+            bestSuccessorState = gameState.generateSuccessor(self.depth%numOfAgents, legalActions[0])
+            # temporary worst score
+            worstScore = miniMax(self,bestSuccessorState)
+            # temporary worst action
+            worstAction = legalActions[0]
+            # Loop through all actions and choose the worst one
+            for action in legalActions:
+                currentSuccessorState = gameState.generateSuccessor(self.depth%numOfAgents, action)
+                currentScore = miniMax(self,currentSuccessorState)
+                if currentScore < worstScore:
+                    worstScore = currentScore
+                    worstAction = action
+
+            return worstAction
+
+
+        "Your code ends here"
         util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
