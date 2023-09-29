@@ -192,6 +192,46 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+        num_of_agents = gameState.getNumAgents()
+
+        def maxValue(agentIndex, gameState,depth,alpha,beta):
+            if depth==0 or (gameState.isWin() or gameState.isLose()):
+                return self.evaluationFunction(gameState),None
+
+            v=-sys.maxsize-1
+            move=None
+            for action in gameState.getLegalActions(agentIndex):
+                v=max(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta)[0])
+                if v>=beta:
+                    move=action
+                    return v,move
+                alpha=max(alpha,v)
+            return v,move
+
+
+        def minValue(agentIndex, gameState,depth,alpha,beta):
+            if depth == 0 or (gameState.isWin() or gameState.isLose()):
+                return self.evaluationFunction(gameState),None
+
+            v=sys.maxsize
+            move=None
+            for action in gameState.getLegalActions(agentIndex):
+                if agentIndex!=num_of_agents-1:
+                    v=min(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta)[0])
+                else:
+                    v=min(v,maxValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth-1,alpha,beta)[0])
+                if v<=alpha:
+                    move=action
+                    return v,move
+                beta=min(beta,v)
+            return v,move
+
+
+        utility,action = minValue(0, gameState,self.depth,-sys.maxsize-1,sys.maxsize)
+        return action
+
+        # return action
+        "My code ends here"
         util.raiseNotDefined()
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
