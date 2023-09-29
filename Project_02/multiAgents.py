@@ -10,7 +10,7 @@
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
+import sys
 
 from util import manhattanDistance
 from game import Directions
@@ -135,6 +135,51 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
+        num_of_agents = gameState.getNumAgents()
+
+        def maxValue(agentIndex, gameState,depth):
+            # Take no action if we've reached the goal; just return the urility
+            if depth==0 or (gameState.isWin() or gameState.isLose()):
+                return self.evaluationFunction(gameState), None
+
+            value = -sys.maxsize - 1
+            move = None
+            # Choose the action that results in the best utility(Take the max of the minimums)
+            for action in gameState.getLegalActions(agentIndex):
+                current_value, current_move = minValue((agentIndex + 1) % num_of_agents,
+                                                       gameState.generateSuccessor(agentIndex, action),depth)
+
+                # Take the action that results in the maximum utility
+                if current_value > value:
+                    value, move = current_value, action
+            return value, move
+
+        def minValue(agentIndex, gameState,depth):
+            if depth==0 or (gameState.isWin() or gameState.isLose()):
+                return self.evaluationFunction(gameState), None
+
+            value = sys.maxsize
+            move = None
+            for action in gameState.getLegalActions(agentIndex):
+                # if it's not the last ghost's turn, don't update depth
+                if agentIndex!=num_of_agents-1:
+                    current_value, current_move = minValue((agentIndex + 1) % num_of_agents,
+                                                           gameState.generateSuccessor(agentIndex, action), depth)
+
+                # update depth since it's Pacman's turn to move
+                else:
+                    current_value, current_move = maxValue((agentIndex + 1) % num_of_agents,
+                                                           gameState.generateSuccessor(agentIndex, action), depth - 1)
+
+                # Take the action that results in the least utility
+                if current_value < value:
+                    value, move = current_value, action
+            return value, move
+
+        utility, action = maxValue(0, gameState,self.depth)
+
+        return action
+
         util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
