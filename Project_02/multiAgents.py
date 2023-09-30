@@ -196,41 +196,42 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         def maxValue(agentIndex, gameState,depth,alpha,beta):
             if depth==0 or (gameState.isWin() or gameState.isLose()):
-                return self.evaluationFunction(gameState),None
+                return self.evaluationFunction(gameState)
 
             v=-sys.maxsize-1
-            move=None
-            for action in gameState.getLegalActions(agentIndex):
-                v=max(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta)[0])
-                if v>=beta:
-                    move=action
-                    return v,move
+            legal_actions = gameState.getLegalActions(agentIndex)
+            for action in legal_actions:
+                v=max(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta))
+                if v>beta:
+                    return v
                 alpha=max(alpha,v)
-            return v,move
+            return v
 
 
         def minValue(agentIndex, gameState,depth,alpha,beta):
             if depth == 0 or (gameState.isWin() or gameState.isLose()):
-                return self.evaluationFunction(gameState),None
+                return self.evaluationFunction(gameState)
 
             v=sys.maxsize
-            move=None
-            for action in gameState.getLegalActions(agentIndex):
+            legal_actions=gameState.getLegalActions(agentIndex)
+            for action in legal_actions:
                 if agentIndex!=num_of_agents-1:
-                    v=min(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta)[0])
+                    v=min(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta))
                 else:
-                    v=min(v,maxValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth-1,alpha,beta)[0])
-                if v<=alpha:
-                    move=action
-                    return v,move
+                    v=min(v,maxValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth-1,alpha,beta))
+                if v<alpha:
+                    return v
                 beta=min(beta,v)
-            return v,move
+            return v
 
+        utility = maxValue(0, gameState,self.depth,-sys.maxsize-1,sys.maxsize)
 
-        utility,action = minValue(0, gameState,self.depth,-sys.maxsize-1,sys.maxsize)
-        return action
-
-        # return action
+        legal_actions=gameState.getLegalActions(0)
+        for action in legal_actions :
+            score= minValue(1,gameState.generateSuccessor(0,action),self.depth,-sys.maxsize-1,sys.maxsize)
+            if score==utility:
+                return action
+        return None
         "My code ends here"
         util.raiseNotDefined()
 
