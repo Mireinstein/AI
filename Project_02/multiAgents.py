@@ -71,10 +71,40 @@ class ReflexAgent(Agent):
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
+        newGhostStates.sort(key=lambda x:manhattanDistance(newPos,x.getPosition()))
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
+        food_locations=newFood.asList()
+        food_locations.sort(key=lambda x:manhattanDistance(x,newPos))
+        ghost_locations=[g.getPosition() for g in newGhostStates]
+
+
+        # if ghosts are close and are not scared, run away
+        for ghost_location in ghost_locations:
+            if manhattanDistance(ghost_location,newPos)<2 and newScaredTimes[0]>0:
+                return newScaredTimes[0]/10000
+            if manhattanDistance(ghost_location, newPos) < 2 and newScaredTimes[0] ==0:
+                return -sys.maxsize/10000
+
+        num_food_left=successorGameState.getNumFood()
+
+        # Pacman should keep moving
+        if(manhattanDistance(currentGameState.getPacmanPosition(),newPos))==0 and manhattanDistance(newPos,newGhostStates[0].getPosition())>=2:
+            return -sys.maxsize/10000
+
+        # reward the behaviour of finishing food
+        if num_food_left==0:
+            return sys.maxsize/10000
+
+        # incorporate distance to closest food
+        return (10000/num_food_left)-(manhattanDistance(newPos,food_locations[0])/10000)
+
+        # return (1/dist_to_closest_food)
+
+
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        # return successorGameState.getScore()
+
 
 def scoreEvaluationFunction(currentGameState):
     """
