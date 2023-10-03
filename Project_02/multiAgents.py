@@ -18,6 +18,7 @@ import random, util
 
 from game import Agent
 
+
 class ReflexAgent(Agent):
     """
     A reflex agent chooses an action at each choice point by examining
@@ -27,7 +28,6 @@ class ReflexAgent(Agent):
     it in any way you see fit, so long as you don't touch our method
     headers.
     """
-
 
     def getAction(self, gameState):
         """
@@ -45,7 +45,7 @@ class ReflexAgent(Agent):
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-        chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+        chosenIndex = random.choice(bestIndices)  # Pick randomly among the best
 
         "Add more of your code here if you want to"
 
@@ -71,36 +71,36 @@ class ReflexAgent(Agent):
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
-        newGhostStates.sort(key=lambda x:manhattanDistance(newPos,x.getPosition()))
+        newGhostStates.sort(key=lambda x: manhattanDistance(newPos, x.getPosition()))
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        food_locations=newFood.asList()
-        food_locations.sort(key=lambda x:manhattanDistance(x,newPos))
-        ghost_locations=[g.getPosition() for g in newGhostStates]
-
+        food_locations = newFood.asList()
+        food_locations.sort(key=lambda x: manhattanDistance(x, newPos))
+        ghost_locations = [g.getPosition() for g in newGhostStates]
 
         # if ghosts are close and are not scared, run away
         for ghost_location in ghost_locations:
-            if manhattanDistance(ghost_location,newPos)<2 and newScaredTimes[0]>0:
-                return newScaredTimes[0]/10000
-            if manhattanDistance(ghost_location, newPos) < 2 and newScaredTimes[0] ==0:
-                return -sys.maxsize/10000
+            if manhattanDistance(ghost_location, newPos) < 2 and newScaredTimes[0] > 0:
+                return newScaredTimes[0] / 10000
+            if manhattanDistance(ghost_location, newPos) < 2 and newScaredTimes[0] == 0:
+                return -sys.maxsize / 10000
 
-        num_food_left=successorGameState.getNumFood()
+        num_food_left = successorGameState.getNumFood()
 
         # Pacman should keep moving
-        if(manhattanDistance(currentGameState.getPacmanPosition(),newPos))==0 and manhattanDistance(newPos,newGhostStates[0].getPosition())>=2:
-            return -sys.maxsize/10000
+        if (manhattanDistance(currentGameState.getPacmanPosition(), newPos)) == 0 and manhattanDistance(newPos,
+                                                                                                        newGhostStates[
+                                                                                                            0].getPosition()) >= 2:
+            return -sys.maxsize / 10000
 
         # reward the behaviour of finishing food
-        if num_food_left==0:
-            return sys.maxsize/10000
+        if num_food_left == 0:
+            return sys.maxsize / 10000
 
         # incorporate distance to closest food
-        return (10000/num_food_left)-(manhattanDistance(newPos,food_locations[0])/10000)
+        return (10000 / num_food_left) - (manhattanDistance(newPos, food_locations[0]) / 10000)
 
         # return (1/dist_to_closest_food)
-
 
         "*** YOUR CODE HERE ***"
         # return successorGameState.getScore()
@@ -115,6 +115,7 @@ def scoreEvaluationFunction(currentGameState):
     (not reflex agents).
     """
     return currentGameState.getScore()
+
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -131,10 +132,11 @@ class MultiAgentSearchAgent(Agent):
     is another abstract class.
     """
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
-        self.index = 0 # Pacman is always agent index 0
+    def __init__(self, evalFn='scoreEvaluationFunction', depth='2'):
+        self.index = 0  # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
+
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -167,9 +169,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         num_of_agents = gameState.getNumAgents()
 
-        def maxValue(agentIndex, gameState,depth):
+        def maxValue(agentIndex, gameState, depth):
             # Take no action if we've reached the goal; just return the urility
-            if depth==0 or (gameState.isWin() or gameState.isLose()):
+            if depth == 0 or (gameState.isWin() or gameState.isLose()):
                 return self.evaluationFunction(gameState), None
 
             value = -sys.maxsize - 1
@@ -177,22 +179,22 @@ class MinimaxAgent(MultiAgentSearchAgent):
             # Choose the action that results in the best utility(Take the max of the minimums)
             for action in gameState.getLegalActions(agentIndex):
                 current_value, current_move = minValue((agentIndex + 1) % num_of_agents,
-                                                       gameState.generateSuccessor(agentIndex, action),depth)
+                                                       gameState.generateSuccessor(agentIndex, action), depth)
 
                 # Take the action that results in the maximum utility
                 if current_value > value:
                     value, move = current_value, action
             return value, move
 
-        def minValue(agentIndex, gameState,depth):
-            if depth==0 or (gameState.isWin() or gameState.isLose()):
+        def minValue(agentIndex, gameState, depth):
+            if depth == 0 or (gameState.isWin() or gameState.isLose()):
                 return self.evaluationFunction(gameState), None
 
             value = sys.maxsize
             move = None
             for action in gameState.getLegalActions(agentIndex):
                 # if it's not the last ghost's turn, don't update depth
-                if agentIndex!=num_of_agents-1:
+                if agentIndex != num_of_agents - 1:
                     current_value, current_move = minValue((agentIndex + 1) % num_of_agents,
                                                            gameState.generateSuccessor(agentIndex, action), depth)
 
@@ -206,11 +208,12 @@ class MinimaxAgent(MultiAgentSearchAgent):
                     value, move = current_value, action
             return value, move
 
-        utility, action = maxValue(0, gameState,self.depth)
+        utility, action = maxValue(0, gameState, self.depth)
 
         return action
 
         util.raiseNotDefined()
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -222,48 +225,58 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+        # a list of tuples containing info about the first level actions (score, action).
+        firstLevelList = []
+
         num_of_agents = gameState.getNumAgents()
 
-        def maxValue(agentIndex, gameState,depth,alpha,beta):
-            if depth==0 or (gameState.isWin() or gameState.isLose()):
-                return self.evaluationFunction(gameState)
+        def maxValue(agentIndex, gstate, depth, alpha, beta):
+            if depth == 0 or (gstate.isWin() or gstate.isLose()):
+                return self.evaluationFunction(gstate)
 
-            v=-sys.maxsize-1
-            legal_actions = gameState.getLegalActions(agentIndex)
-            for action in legal_actions:
-                v=max(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta))
-                if v>beta:
+            v = -sys.maxsize - 1
+            legal_acts = gstate.getLegalActions(agentIndex)
+            for a in legal_acts:
+                v = max(v, minValue((agentIndex + 1) % num_of_agents, gstate.generateSuccessor(agentIndex, a), depth,
+                                    alpha, beta))
+                # only record to our list if we are at the first level (before we have modified depth).
+                if depth == self.depth: firstLevelList.append((v, a))
+
+                if v > beta:
                     return v
-                alpha=max(alpha,v)
+                alpha = max(alpha, v)
+
             return v
 
+        def minValue(agentIndex, gstate, depth, alpha, beta):
+            if depth == 0 or (gstate.isWin() or gstate.isLose()):
+                return self.evaluationFunction(gstate)
 
-        def minValue(agentIndex, gameState,depth,alpha,beta):
-            if depth == 0 or (gameState.isWin() or gameState.isLose()):
-                return self.evaluationFunction(gameState)
-
-            v=sys.maxsize
-            legal_actions=gameState.getLegalActions(agentIndex)
-            for action in legal_actions:
-                if agentIndex!=num_of_agents-1:
-                    v=min(v,minValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth,alpha,beta))
+            v = sys.maxsize - 1
+            legal_acts = gstate.getLegalActions(agentIndex)
+            for a in legal_acts:
+                if agentIndex != num_of_agents - 1:
+                    v = min(v,
+                            minValue((agentIndex + 1) % num_of_agents, gstate.generateSuccessor(agentIndex, a), depth,
+                                     alpha, beta))
                 else:
-                    v=min(v,maxValue((agentIndex + 1)%num_of_agents,gameState.generateSuccessor(agentIndex, action),depth-1,alpha,beta))
-                if v<alpha:
+                    v = min(v, maxValue((agentIndex + 1) % num_of_agents, gstate.generateSuccessor(agentIndex, a),
+                                        depth - 1, alpha, beta))
+                if v < alpha:
                     return v
-                beta=min(beta,v)
+                beta = min(beta, v)
             return v
 
-        utility = maxValue(0, gameState,self.depth,-sys.maxsize-1,sys.maxsize)
+        utility = maxValue(0, gameState, self.depth, -sys.maxsize - 1, sys.maxsize)
 
-        legal_actions=gameState.getLegalActions(0)
-        for action in legal_actions :
-            score= minValue(1,gameState.generateSuccessor(0,action),self.depth,-sys.maxsize-1,sys.maxsize)
-            if score==utility:
-                return action
+        # query out list for where the action is optimal
+        for tuple in firstLevelList:
+            if tuple[0] == utility:
+                return tuple[1]
         return None
         "My code ends here"
         util.raiseNotDefined()
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -329,6 +342,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         "** our code ends here **"
         util.raiseNotDefined()
 
+
 def betterEvaluationFunction(currentGameState):
     """
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
@@ -338,6 +352,7 @@ def betterEvaluationFunction(currentGameState):
     """
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
+
 
 # Abbreviation
 better = betterEvaluationFunction
