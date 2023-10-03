@@ -278,6 +278,55 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+
+        num_of_agents = gameState.getNumAgents()
+
+        def maxValue(agentIndex, gameState, depth):
+            # Take no action if we've reached the goal; just return the utility
+            if depth == 0 or (gameState.isWin() or gameState.isLose()):
+                return self.evaluationFunction(gameState), None
+
+            value = -sys.maxsize - 1
+            move = None
+            # Choose the action that results in the best utility(Take the max of the minimums)
+            for action in gameState.getLegalActions(agentIndex):
+                current_value, current_move = expectedScore((agentIndex + 1) % num_of_agents,
+                                                            gameState.generateSuccessor(agentIndex, action), depth)
+
+                # Take the action that results in the maximum utility
+                if current_value > value:
+                    value, move = current_value, action
+            return value, move
+
+        def expectedScore(agentIndex, gameState, depth):
+            # Take no action if we've reached the goal; just return the utility
+            if gameState.isWin() or gameState.isLose() or depth < 1:
+                return self.evaluationFunction(gameState), None
+
+            legal_actions = gameState.getLegalActions(agentIndex)
+
+            sum_scores = 0
+
+            for action in legal_actions:
+                if agentIndex != num_of_agents - 1:
+                    current_value, current_move = expectedScore((agentIndex + 1) % num_of_agents,
+                                                                gameState.generateSuccessor(agentIndex, action), depth)
+                    sum_scores += current_value
+
+                # update depth since it's Pacman's turn to move
+                else:
+                    current_value, current_move = maxValue((agentIndex + 1) % num_of_agents,
+                                                           gameState.generateSuccessor(agentIndex, action), depth - 1)
+                    sum_scores += current_value
+
+            # Calculate the average score and select a random action
+            avg_score = sum_scores / len(legal_actions)
+            action = legal_actions[random.randrange(0, len(legal_actions))]
+            return avg_score, action
+
+        return maxValue(0, gameState, self.depth)[1]
+
+        "** our code ends here **"
         util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState):
