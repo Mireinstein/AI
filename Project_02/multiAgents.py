@@ -87,10 +87,9 @@ class ReflexAgent(Agent):
 
         num_food_left = successorGameState.getNumFood()
 
-        # Pacman should keep moving
-        if (manhattanDistance(currentGameState.getPacmanPosition(), newPos)) == 0 and manhattanDistance(newPos,
-                                                                                                        newGhostStates[
-                                                                                                            0].getPosition()) >= 2:
+        # State is bad if pacman is in danger
+        if ((manhattanDistance(currentGameState.getPacmanPosition(), newPos)) == 0
+                and manhattanDistance(newPos,newGhostStates[0].getPosition()) >= 2):
             return -sys.maxsize / 10000
 
         # reward the behaviour of finishing food
@@ -349,8 +348,57 @@ def betterEvaluationFunction(currentGameState):
     evaluation function (question 5).
 
     DESCRIPTION: <write something here so we know what you did>
+
+    Our evaluation function is a linear combination of the reciprocals of the distance to the closest ghost,
+    the distance to the closest food, and the number of foods left. Each reciprocal is weighted differently,
+    based on how typically those values are in a Pacman game.
+
+    There are also the edge case when the state being evaluated has no foods.
+
+    There are also general 'wisdoms' of Pacman: - if you are close to an un-scared ghost, it's bad.
+                                                - if ghosts are currently scared do your best to eat them
+
+    Our weights reflect the importance of each measure but also the ranges in which they lie in the game.
+            * The amount of food remaining is weighed heaviest,
+            * Followed by the urgency to eat a ghost for the short duration they are scared
+            * and last, the distance to the closest pellet (In general, you can eat the closest food anytime you are not in danger)
+
+
     """
     "*** YOUR CODE HERE ***"
+    score = 0
+    pacman_position = currentGameState.getPacmanPosition()
+    newFood = currentGameState.getFood()
+    newGhostStates = currentGameState.getGhostStates()
+    newGhostStates.sort(key=lambda x: manhattanDistance(pacman_position, x.getPosition()))
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+    food_locations = newFood.asList()
+    food_locations.sort(key=lambda x: manhattanDistance(x, pacman_position), reverse=True)
+    food_distances = [manhattanDistance(pacman_position, location) for location in food_locations]
+
+    ghost_locations = [g.getPosition() for g in newGhostStates]
+    ghost_distances = [manhattanDistance(pacman_position, location) for location in ghost_locations]
+
+    num_food_left = currentGameState.getNumFood()
+
+
+    if num_food_left == 0:
+        return sys.maxsize
+
+    if min(ghost_distances) <= 1 and max(newScaredTimes) == 0:
+        return -sys.maxsize - 1
+
+    score += 1000 * (1 / num_food_left)
+
+    if newScaredTimes[0] > 0:
+            score += 100 * (1/ manhattanDistance(pacman_position, ghost_locations[0]))
+
+    score += 1/min(food_distances)
+
+    return score
+
+    "** Our code ends here"
     util.raiseNotDefined()
 
 
