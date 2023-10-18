@@ -24,7 +24,7 @@
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
+import sys
 
 import mdp, util
 
@@ -65,6 +65,37 @@ class ValueIterationAgent(ValueEstimationAgent):
           value iteration, V_k+1(...) depends on V_k(...)'s.
         """
         "*** YOUR CODE HERE ***"
+        currentValues=self.values.copy()
+        iterations=self.iterations
+        while True:
+            self.values=currentValues.copy()
+            # delta=0
+            iterations-=1
+            for state in self.mdp.getStates():
+                utility=0
+                for action in self.mdp.getPossibleActions(state):
+                    state_prob_list = self.mdp.getTransitionStatesAndProbs(state, action)
+                    q_value = 0
+                    for state_prob_tuple in state_prob_list:
+                        prob_to_next_state = state_prob_tuple[1]
+                        next_state = state_prob_tuple[0]
+                        reward_to_next_state = self.mdp.getReward(state, action, next_state)
+                        q_value += prob_to_next_state * (
+                                    reward_to_next_state + (self.discount * self.values[next_state]))
+                    if q_value>utility:
+                        utility=q_value
+                currentValues[state]=utility
+
+                # if abs(currentValues[state]-self.values[state])>delta:
+                #     delta=abs(currentValues[state]-self.values[state])
+
+            # if delta<=0.05*(1-self.discount)/self.discount:
+            #     # self.values=currentValues.copy()
+            #     break
+            if iterations<0:
+                break
+
+
 
     def getValue(self, state):
         """
@@ -78,6 +109,16 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
+        state_prob_list=self.mdp.getTransitionStatesAndProbs(state,action)
+        q_value=0
+        for state_prob_tuple in state_prob_list:
+            prob_to_next_state=state_prob_tuple[1]
+            next_state=state_prob_tuple[0]
+            reward_to_next_state=self.mdp.getReward(state,action,next_state)
+            q_value+=prob_to_next_state*(reward_to_next_state+(self.discount*self.getValue(next_state)))
+
+        return q_value
+
         util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
@@ -90,6 +131,19 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
+        # Get legal actions from this state
+        legal_actions=self.mdp.getPossibleActions(state)
+
+        # create a dictionary of action to reward
+        action_reward_dict=util.Counter()
+
+        for action in legal_actions:
+            action_reward_dict[action]=self.computeQValueFromValues(state,action)
+
+        # Return the action with the highest Q-value
+        return action_reward_dict.argMax()
+
+
         util.raiseNotDefined()
 
     def getPolicy(self, state):
