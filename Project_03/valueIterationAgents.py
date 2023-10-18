@@ -105,7 +105,7 @@ class ValueIterationAgent(ValueEstimationAgent):
             next_state=state_prob_tuple[0]
             reward_to_next_state=self.mdp.getReward(state,action,next_state)
             if self.mdp.isTerminal(state):
-                q_value += prob_to_next_state * (reward_to_next_state)
+                q_value += prob_to_next_state * reward_to_next_state
             else:
                 q_value+=prob_to_next_state*(reward_to_next_state+(self.discount*self.getValue(next_state)))
 
