@@ -65,44 +65,23 @@ class ValueIterationAgent(ValueEstimationAgent):
           value iteration, V_k+1(...) depends on V_k(...)'s.
         """
         "*** YOUR CODE HERE ***"
-        currentValues=self.values.copy()
-        iterations=self.iterations
+        current_values=self.values.copy()
         while True:
-            self.values=currentValues.copy()
-            # delta=0
-            iterations-=1
+            self.values=current_values.copy()
+            self.iterations-=1
+
             for state in self.mdp.getStates():
                 q_values = []
+                # for every action, find the max q-value
                 for action in self.mdp.getPossibleActions(state):
-                    state_prob_list = self.mdp.getTransitionStatesAndProbs(state, action)
-                    q_value=0
-                    for state_prob_tuple in state_prob_list:
-                        prob_to_next_state = state_prob_tuple[1]
-                        next_state = state_prob_tuple[0]
-                        reward_to_next_state = self.mdp.getReward(state, action, next_state)
-                        if self.mdp.isTerminal(state):
-                            q_value += 0
-
-                        else:
-                            q_value += prob_to_next_state * (
-                                    reward_to_next_state + (self.discount * self.values[next_state]))
-                        q_values.append(q_value)
+                    q_values.append(self.computeQValueFromValues(state,action))
                 if len(q_values)==0:
-                    currentValues[state] = 0
+                    pass
                 else:
-                    currentValues[state] = max(q_values)
+                    current_values[state] = max(q_values)
 
-
-                # if abs(currentValues[state]-self.values[state])>delta:
-                #     delta=abs(currentValues[state]-self.values[state])
-
-            # if delta<=0.05*(1-self.discount)/self.discount:
-            #     # self.values=currentValues.copy()
-            #     break
-            if iterations<0:
+            if self.iterations<0:
                 break
-
-
 
     def getValue(self, state):
         """
@@ -116,17 +95,19 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
+        # get a list of (transition_state, probability) tuples
         state_prob_list=self.mdp.getTransitionStatesAndProbs(state,action)
         q_value=0
 
+        # For all these transition states, find sum of immediate reward plus future reward
         for state_prob_tuple in state_prob_list:
             prob_to_next_state=state_prob_tuple[1]
             next_state=state_prob_tuple[0]
             reward_to_next_state=self.mdp.getReward(state,action,next_state)
             if self.mdp.isTerminal(state):
-                q_value += 0
+                q_value += prob_to_next_state * (reward_to_next_state)
             else:
-               q_value+=prob_to_next_state*(reward_to_next_state+(self.discount*self.getValue(next_state)))
+                q_value+=prob_to_next_state*(reward_to_next_state+(self.discount*self.getValue(next_state)))
 
         return q_value
 
