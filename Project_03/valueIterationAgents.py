@@ -72,19 +72,26 @@ class ValueIterationAgent(ValueEstimationAgent):
             # delta=0
             iterations-=1
             for state in self.mdp.getStates():
-                utility=0
+                q_values = []
                 for action in self.mdp.getPossibleActions(state):
                     state_prob_list = self.mdp.getTransitionStatesAndProbs(state, action)
-                    q_value = 0
+                    q_value=0
                     for state_prob_tuple in state_prob_list:
                         prob_to_next_state = state_prob_tuple[1]
                         next_state = state_prob_tuple[0]
                         reward_to_next_state = self.mdp.getReward(state, action, next_state)
-                        q_value += prob_to_next_state * (
+                        if self.mdp.isTerminal(state):
+                            q_value += 0
+
+                        else:
+                            q_value += prob_to_next_state * (
                                     reward_to_next_state + (self.discount * self.values[next_state]))
-                    if q_value>utility:
-                        utility=q_value
-                currentValues[state]=utility
+                        q_values.append(q_value)
+                if len(q_values)==0:
+                    currentValues[state] = 0
+                else:
+                    currentValues[state] = max(q_values)
+
 
                 # if abs(currentValues[state]-self.values[state])>delta:
                 #     delta=abs(currentValues[state]-self.values[state])
@@ -111,11 +118,15 @@ class ValueIterationAgent(ValueEstimationAgent):
         "*** YOUR CODE HERE ***"
         state_prob_list=self.mdp.getTransitionStatesAndProbs(state,action)
         q_value=0
+
         for state_prob_tuple in state_prob_list:
             prob_to_next_state=state_prob_tuple[1]
             next_state=state_prob_tuple[0]
             reward_to_next_state=self.mdp.getReward(state,action,next_state)
-            q_value+=prob_to_next_state*(reward_to_next_state+(self.discount*self.getValue(next_state)))
+            if self.mdp.isTerminal(state):
+                q_value += 0
+            else:
+               q_value+=prob_to_next_state*(reward_to_next_state+(self.discount*self.getValue(next_state)))
 
         return q_value
 
