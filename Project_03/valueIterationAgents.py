@@ -135,7 +135,6 @@ class ValueIterationAgent(ValueEstimationAgent):
         # Return the action with the highest Q-value
         return action_reward_dict.argMax()
 
-
         util.raiseNotDefined()
 
     def getPolicy(self, state):
