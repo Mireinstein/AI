@@ -75,6 +75,12 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
+        total = self.total()
+        if total == 0: return
+        for key in self.keys():
+            self[key] /= total
+        return
+        "** end **"
         raiseNotDefined()
 
     def sample(self):
@@ -99,6 +105,14 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
+        self.normalize()
+        weight = random.random()
+
+        for key in self.keys():
+            weight -= self[key]
+            if weight <= 0:
+                return key
+        return
         raiseNotDefined()
 
 
@@ -169,6 +183,18 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
+
+        if ghostPosition == jailPosition and noisyDistance is None:
+            return 1.0
+
+        if ( (ghostPosition == jailPosition and noisyDistance is not None) or
+             (ghostPosition != jailPosition and noisyDistance is None) ):
+            return 0.0
+
+        trueDistance = manhattanDistance(pacmanPosition, ghostPosition)
+        obsProb = busters.getObservationProbability(noisyDistance, trueDistance)
+        return obsProb
+
         raiseNotDefined()
 
     def setGhostPosition(self, gameState, ghostPosition, index):
@@ -277,9 +303,17 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-
         self.beliefs.normalize()
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+
+        for position in self.allPositions:
+            probOfPositionGivenWorld = (self.getObservationProb
+                                        (observation, pacmanPosition, position, jailPosition))
+            self.beliefs[position] *= probOfPositionGivenWorld
+        self.beliefs.normalize()
+        return
+        raiseNotDefined()
 
     def elapseTime(self, gameState):
         """
@@ -291,6 +325,16 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
+        sums = DiscreteDistribution()
+
+        for oldPos in self.allPositions:
+            newPosDist = self.getPositionDistribution(gameState, oldPos)
+            for pos in self.allPositions:
+                sums[pos] += newPosDist[pos] * self.beliefs[oldPos]
+
+        self.beliefs = sums
+        self.beliefs.normalize()
+        return
         raiseNotDefined()
 
     def getBeliefDistribution(self):
