@@ -13,6 +13,7 @@
 
 
 import itertools
+import math
 import random
 import busters
 import game
@@ -466,9 +467,7 @@ class JointParticleFilter(ParticleFilter):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        # the number of ghosts we want to track at the same time
-        dimension = 2
-        allDataPoints = list(itertools.product(self.legalPositions, repeat = dimension))
+        allDataPoints = list(itertools.product(self.legalPositions, repeat = self.numGhosts))
         random.shuffle(allDataPoints)
 
         if self.numParticles < len(allDataPoints):
@@ -478,9 +477,6 @@ class JointParticleFilter(ParticleFilter):
             for i in range(self.numParticles):
                 self.particles.append(allDataPoints[i % len(allDataPoints)])
         return
-
-
-
         raiseNotDefined()
 
     def addGhostAgent(self, agent):
@@ -514,6 +510,25 @@ class JointParticleFilter(ParticleFilter):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
+        pacmanPosition = gameState.getPacmanPosition()
+        weightDist = DiscreteDistribution()
+
+        for oldParticle in self.particles:
+            prob = 1
+            for i in range(self.numGhosts):
+                jailPosition = self.getJailPosition(i)
+                prob *= self.getObservationProb(observation[i], pacmanPosition, oldParticle[i], jailPosition)
+            weightDist[oldParticle] += prob
+
+        if weightDist.total() == 0:
+            return self.initializeUniformly(gameState)
+
+        self.particles.clear()
+
+        for i in range(self.numParticles):
+            self.particles.append(weightDist.sample())
+
+        return
         raiseNotDefined()
 
     def elapseTime(self, gameState):
@@ -524,14 +539,17 @@ class JointParticleFilter(ParticleFilter):
         newParticles = []
         for oldParticle in self.particles:
             newParticle = list(oldParticle)  # A list of ghost positions
-
             # now loop through and update each entry in newParticle...
             "*** YOUR CODE HERE ***"
-            raiseNotDefined()
+            for i in range(self.numGhosts):
+                newPostDist = self.getPositionDistribution(gameState, oldParticle, i, self.ghostAgents[i])
+                newParticle[i] = newPostDist.sample()
+            # raiseNotDefined()
 
             """*** END YOUR CODE HERE ***"""
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
+        return
 
 
 # One JointInference module is shared globally across instances of MarginalInference
