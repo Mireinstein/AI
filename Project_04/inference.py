@@ -362,18 +362,14 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        for position in self.legalPositions:
-            for i in range(self.numParticles//len(self.legalPositions)):
-                self.particles.append(position)
-
-        mod = self.numParticles % len(self.legalPositions)
-
-        if mod != 0:
-            for i in range (mod):
+        if self.numParticles < len(self.legalPositions):
+            for i in range(self.numParticles):
                 self.particles.append(self.legalPositions[i])
-
+        else:
+            for i in range(self.numParticles):
+                self.particles.append(self.legalPositions[i % len(self.legalPositions)])
         return
-        # raiseNotDefined()
+        raiseNotDefined()
 
     def observeUpdate(self, observation, gameState):
         """
@@ -412,6 +408,19 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
+        sums = self.getBeliefDistribution()
+
+        for particle in self.particles:
+            newPosDist = self.getPositionDistribution(gameState, particle)
+            for part in newPosDist:
+                sums[part] += newPosDist[part]
+
+        self.particles.clear()
+
+        for i in range(self.numParticles):
+            self.particles.append(sums.sample())
+
+        return
         raiseNotDefined()
 
     def getBeliefDistribution(self):
@@ -457,6 +466,21 @@ class JointParticleFilter(ParticleFilter):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
+        # the number of ghosts we want to track at the same time
+        dimension = 2
+        allDataPoints = list(itertools.product(self.legalPositions, repeat = dimension))
+        random.shuffle(allDataPoints)
+
+        if self.numParticles < len(allDataPoints):
+            for i in range(self.numParticles):
+                self.particles.append(allDataPoints[i])
+        else:
+            for i in range(self.numParticles):
+                self.particles.append(allDataPoints[i % len(allDataPoints)])
+        return
+
+
+
         raiseNotDefined()
 
     def addGhostAgent(self, agent):
