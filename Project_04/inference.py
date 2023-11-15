@@ -78,6 +78,7 @@ class DiscreteDistribution(dict):
         "*** YOUR CODE HERE ***"
         total = self.total()
         if total == 0: return
+        #else
         for key in self.keys():
             self[key] /= total
         return
@@ -107,8 +108,9 @@ class DiscreteDistribution(dict):
         """
         "*** YOUR CODE HERE ***"
         self.normalize()
+        # some decimal, uniformly generated, btn 0 and 1 exclusive
         weight = random.random()
-
+        # continuously subtract from it
         for key in self.keys():
             weight -= self[key]
             if weight <= 0:
@@ -184,6 +186,7 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
+        #see description of the question on the project writeup
 
         if ghostPosition == jailPosition and noisyDistance is None:
             return 1.0
@@ -304,10 +307,13 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
+        # this is the 'update based on evidence' part of the Forward algorithm
+        # formula from lec slides
         self.beliefs.normalize()
         pacmanPosition = gameState.getPacmanPosition()
         jailPosition = self.getJailPosition()
 
+        # the getObservationProb gives us the P(e<t+1>|X<t+1>) terms
         for position in self.allPositions:
             probOfPositionGivenWorld = (self.getObservationProb
                                         (observation, pacmanPosition, position, jailPosition))
@@ -326,8 +332,13 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
-        sums = DiscreteDistribution()
+        # this is the 'project beliefs in future' part of the Forward algorithm
+        # the autograder also tests their combination: the full Forward algo
 
+        # old beliefs are already in self.beliefs
+        sums = DiscreteDistribution() # placeholder distribution
+
+        # observe evidence and update beliefs. the getPositionDistribution is the P(X<t+1>|x<t>)
         for oldPos in self.allPositions:
             newPosDist = self.getPositionDistribution(gameState, oldPos)
             for pos in self.allPositions:
@@ -363,9 +374,13 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
+        # if we've got fewer particles than positions, just throw the darts
+        # according to writeup Q5 only has tests with particles being more than legal positions,
+        # but I'll leave this in.
         if self.numParticles < len(self.legalPositions):
             for i in range(self.numParticles):
                 self.particles.append(self.legalPositions[i])
+        # if we've got more particles than positions, put them in and use mod to wrap around
         else:
             for i in range(self.numParticles):
                 self.particles.append(self.legalPositions[i % len(self.legalPositions)])
@@ -388,16 +403,21 @@ class ParticleFilter(InferenceModule):
         pacmanPosition = gameState.getPacmanPosition()
         jailPosition = self.getJailPosition()
 
+        # start with an empty weight vector since we are not projecting any belief in time,
+        # only what the sensor observed (sensor assumption)
         weightDist = DiscreteDistribution()
+        # run the likelihood estimation formula
 
+        # observe evidence and update beliefs. the getPositionDistribution is the P(X<t+1>|x<t>)
         for particle in self.particles:
             weightDist[particle] += self.getObservationProb(observation, pacmanPosition, particle, jailPosition)
 
+        # special case
         if weightDist.total() == 0:
             return self.initializeUniformly(gameState)
 
         self.particles.clear()
-
+        # resample
         for i in range(self.numParticles):
             self.particles.append(weightDist.sample())
         return
@@ -409,8 +429,10 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
+        #start with yesterday's beliefs
         sums = self.getBeliefDistribution()
 
+        #update today's beliefs. the getPositionDistribution is the P(X<t+1>|x<t>)
         for particle in self.particles:
             newPosDist = self.getPositionDistribution(gameState, particle)
             for part in newPosDist:
@@ -418,6 +440,7 @@ class ParticleFilter(InferenceModule):
 
         self.particles.clear()
 
+        #resample
         for i in range(self.numParticles):
             self.particles.append(sums.sample())
 
@@ -433,6 +456,7 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
+        #count occurrences and turn them into a fraction btn 0 and 1. basically percentage counting.
         self.beliefs = DiscreteDistribution()
         for particle in self.particles:
             self.beliefs[particle] += 1
@@ -467,6 +491,10 @@ class JointParticleFilter(ParticleFilter):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
+        # same idea as before except our particles are now n-uples (tuples if n=2) of positions
+
+        #allDataPoints is the n-ary Cartesian Power of legal Positions, where n = number of ghosts
+        #enumerates any n positions that n ghosts could be.
         allDataPoints = list(itertools.product(self.legalPositions, repeat = self.numGhosts))
         random.shuffle(allDataPoints)
 
@@ -474,6 +502,7 @@ class JointParticleFilter(ParticleFilter):
             for i in range(self.numParticles):
                 self.particles.append(allDataPoints[i])
         else:
+            #wrap around
             for i in range(self.numParticles):
                 self.particles.append(allDataPoints[i % len(allDataPoints)])
         return
@@ -517,14 +546,20 @@ class JointParticleFilter(ParticleFilter):
             prob = 1
             for i in range(self.numGhosts):
                 jailPosition = self.getJailPosition(i)
+                # the probability that they all agree with the evidence is the intersection
+                # so multiplication since they're independent.
                 prob *= self.getObservationProb(observation[i], pacmanPosition, oldParticle[i], jailPosition)
+            # then add the probability to the entry; remember; some entries will be modified more than once
+            # since particles might contain duplicates
             weightDist[oldParticle] += prob
 
+        # special case
         if weightDist.total() == 0:
             return self.initializeUniformly(gameState)
 
         self.particles.clear()
 
+        # resample
         for i in range(self.numParticles):
             self.particles.append(weightDist.sample())
 
@@ -543,6 +578,7 @@ class JointParticleFilter(ParticleFilter):
             "*** YOUR CODE HERE ***"
             for i in range(self.numGhosts):
                 newPostDist = self.getPositionDistribution(gameState, oldParticle, i, self.ghostAgents[i])
+                #... basically try to update it to the new likely-ish position this ghost might move to.
                 newParticle[i] = newPostDist.sample()
             # raiseNotDefined()
 
