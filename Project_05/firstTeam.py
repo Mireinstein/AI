@@ -58,16 +58,19 @@ class ReflexCaptureAgent(CaptureAgent):
                                for b in range(self.layout.height)]
         self.allCoordsNoWalls = [(a, b) for (a, b) in self.allCoordinates if not self.walls[a][b]]
 
+        self.red = gameState.isOnRedTeam(self.index)
+
         if not self.red:  # if blue, the right half is ours
-            self.homeTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a >= self.layout.width]
-            self.oppTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a < self.layout.width]
+            print(self.red)
+            self.homeTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a >= self.layout.width // 2]
+            self.oppTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a < self.layout.width // 2]
         else:
-            self.homeTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a < self.layout.width]
-            self.oppTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a >= self.layout.width]
+            self.homeTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a < self.layout.width // 2]
+            self.oppTerritoryNoWalls = [(a, b) for (a, b) in self.allCoordsNoWalls if a >= self.layout.width // 2]
 
-        self.foodInStomach = 0
-        self.myEnemyToHomeCrossings = 0
 
+        self.foodToEat = len(self.getFood(gameState).asList())
+        self.lastTotalFoodBeforeDeposit = self.foodToEat
         CaptureAgent.registerInitialState(self, gameState)
 
     def chooseAction(self, gameState: capture.GameState):
@@ -155,20 +158,20 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
         capsulesToEat = self.getCapsules(gameState)
 
-        if (self.getCurrentObservation().getAgentPosition(self.index) in self.homeTerritoryNoWalls)\
-                and (self.getPreviousObservation().getAgentPosition(self.index) in self.oppTerritoryNoWalls):
-            
-
-
 
         features['successorScore'] = -len(foodList)  # self.getScore(successor)
         features['capsulesScore'] = -len(capsulesToEat)
-        features['goHome'] = 0
 
-        if features['successorScore'] >= 5: # not exactly what I should write
-            features['goHome'] = self.getMazeDistance(currentPosition, self.homeTerritoryNoWalls[0])
+        if features['successorScore'] >= - self.foodToEat + 3 and currentPosition in self.oppTerritoryNoWalls:
+            features['goHome'] = -self.getMazeDistance(currentPosition, self.homeTerritoryNoWalls[0])
+        else:
+            features['goHome'] = 0
 
-        print(features['successorScore'])
+        prevObs = self.getPreviousObservation()
+
+        if prevObs is not None and (self.getCurrentObservation().getAgentPosition(self.index) in self.homeTerritoryNoWalls) \
+                and (prevObs.getAgentPosition(self.index) in self.oppTerritoryNoWalls):
+            features['goHome'] = 0
 
         # Compute distance to the nearest food
 
@@ -176,21 +179,36 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             myPos = successor.getAgentState(self.index).getPosition()
             minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
             features['distanceToFood'] = minDistance
+
+        distanceToEnemies = [self.getMazeDistance(currentPosition, gameState.getAgentPosition(index)) for index in
+                             self.enemyAgentsIndices]
+        # features['distanceToClosestEnemy'] = min(distanceToEnemies)
+        print(gameState.getAgentPosition(self.enemyAgentsIndices[0]))
+        print(gameState.getAgentPosition(self.enemyAgentsIndices[1]))
+
+
+        if currentPosition in self.oppTerritoryNoWalls:
+
+            distanceToEnemies = [self.getMazeDistance(currentPosition, gameState.getAgentPosition(index)) for index in self.enemyAgentsIndices]
+            features['distanceToClosestEnemy'] = min(distanceToEnemies)
+            print(distanceToEnemies)
+
+            features['successorScore'] = 0
+        else:
+            features['distanceToClosestEnemy'] = 0
+            features['successorScore'] = -len(foodList)
+
         return features
 
     def getWeights(self, gameState: capture.GameState, action):
 
         weights = util.Counter()
         weights['successorScore'] = 100
-        weights['capsulesScore'] = 500
+        weights['capsulesScore'] = 0
         weights['goHome'] = 0
-
-        if self.getFeatures(gameState)['successorScore'] >= 3:
-            weights['successorScore'] = 1
-            weights['goHome'] = 100
+        weights['distanceToClosestEnemy'] = 1
 
         weights['distanceToFood'] = -1
-
 
         return weights
 
