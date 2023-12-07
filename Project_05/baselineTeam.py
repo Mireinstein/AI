@@ -107,6 +107,7 @@ class ReflexCaptureAgent(CaptureAgent):
     """
     Computes a linear combination of features and feature weights
     """
+
     features = self.getFeatures(gameState, action)
     weights = self.getWeights(gameState, action)
     return features * weights
