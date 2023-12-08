@@ -382,7 +382,6 @@ def betterEvaluationFunction(currentGameState):
 
     num_food_left = currentGameState.getNumFood()
 
-
     if num_food_left == 0:
         return sys.maxsize
 

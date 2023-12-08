@@ -56,6 +56,8 @@ class QLearningAgent(ReinforcementAgent):
         return self.action_values[(state,action)]
         util.raiseNotDefined()
 
+    #   ported from project 3
+
     def computeValueFromQValues(self, state):
         """
           Returns max_action Q(state,action)
@@ -132,7 +134,7 @@ class QLearningAgent(ReinforcementAgent):
         # this is th crucial update Qvalue step: see lecture slides
         if state is not None:
             difference = reward + (self.discount * self.computeValueFromQValues(nextState))- self.getQValue(state,action)
-            self.action_values[(state, action)] = self.getQValue(state, action)  + self.alpha * difference
+            self.action_values[(state, action)] = self.getQValue(state, action) + self.alpha * difference
 
         else:
             pass

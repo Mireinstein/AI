@@ -170,14 +170,14 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         enemyGhostIndices = [i for i in self.enemyAgentsIndices if not successor.getAgentState(i).isPacman]
 
         h = min([self.getMazeDistance(newPosition, homePos) for homePos in self.homeTerritoryNoWalls])
-        d = min([self.getMazeDistance(newPosition, successor.getAgentPosition(i)) for i in enemyGhostIndices])
+        d = min([self.getMazeDistance(newPosition, successor.getAgentPosition(i)) for i in enemyGhostIndices]) if len(enemyGhostIndices) > 0 else 0
 
         if newState.isPacman and foodInStomach >= 2:
             print(foodInStomach)
             print(self.foodToEat, self.lastDepositedFood, foodInStomach)
             f = util.Counter()
             f['distToHome'] = h
-            f['distToClosestGhost'] = 1/d
+            f['distToClosestGhost'] = 1/(d + 0.00000001)
             return f
 
 

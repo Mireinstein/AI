@@ -107,7 +107,6 @@ class ReflexCaptureAgent(CaptureAgent):
     """
     Computes a linear combination of features and feature weights
     """
-
     features = self.getFeatures(gameState, action)
     weights = self.getWeights(gameState, action)
     return features * weights
@@ -137,7 +136,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
   def getFeatures(self, gameState: capture.GameState, action):
     features = util.Counter()
     successor = self.getSuccessor(gameState, action)
-    foodList = self.getFood(successor).asList()    
+    foodList = self.getFood(successor).asList()
     features['successorScore'] = -len(foodList)#self.getScore(successor)
 
     # Compute distance to the nearest food
