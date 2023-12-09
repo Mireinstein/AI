@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="11a3289c-1f65-4078-acbb-8058652bf6f7" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Project_05/train.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Project_04/distanceCalculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Project_04/distanceCalculator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Project_05/capture.py" beforeDir="false" afterPath="$PROJECT_DIR$/Project_05/capture.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Project_05/firstTeam.py" beforeDir="false" afterPath="$PROJECT_DIR$/Project_05/firstTeam.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Project_05/myTeam.py" beforeDir="false" afterPath="$PROJECT_DIR$/Project_05/myTeam.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Project_05/score" beforeDir="false" afterPath="$PROJECT_DIR$/Project_05/score" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Project_05/secondTeam.py" beforeDir="false" afterPath="$PROJECT_DIR$/Project_05/secondTeam.py" afterDir="false" />
     </list>

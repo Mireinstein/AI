@@ -64,9 +64,9 @@ import keyboardAgents
 # If you change these, you won't affect the server, so you can't cheat
 KILL_POINTS = 0
 # ***BEGIN REMOVED FOR CONTEST 2***
-# SONAR_NOISE_RANGE = 13 # Must be odd
-# SONAR_NOISE_VALUES = [i - (SONAR_NOISE_RANGE - 1)/2 for i in range(SONAR_NOISE_RANGE)]
-# SIGHT_RANGE = 5 # Manhattan distance
+SONAR_NOISE_RANGE = 13 # Must be odd
+SONAR_NOISE_VALUES = [i - (SONAR_NOISE_RANGE - 1)/2 for i in range(SONAR_NOISE_RANGE)]
+SIGHT_RANGE = 5 # Manhattan distance
 # ***END REMOVED FOR CONTEST 2***
 MIN_FOOD = 2
 TOTAL_FOOD = 60
@@ -77,8 +77,8 @@ SCARED_TIME = 40
 CRASH_PENALTY = 100 # the penalty for crashing (due to timeout or exceptions)
 
 # ***BEGIN REMOVED FOR CONTEST 2***
-# def noisyDistance(pos1, pos2):
-#   return int(util.manhattanDistance(pos1, pos2) + random.choice(SONAR_NOISE_VALUES))
+def noisyDistance(pos1, pos2):
+  return int(util.manhattanDistance(pos1, pos2) + random.choice(SONAR_NOISE_VALUES))
 # ***END REMOVED FOR CONTEST 2***
 
 ###################################################
@@ -221,12 +221,12 @@ class GameState:
       return None
 
   # ***BEGIN REMOVED FOR CONTEST 2***
-  # def getDistanceProb(self, trueDistance, noisyDistance):
-  #   "Returns the probability of a noisy distance given the true distance"
-  #   if noisyDistance - trueDistance in SONAR_NOISE_VALUES:
-  #     return 1.0/SONAR_NOISE_RANGE
-  #   else:
-  #     return 0
+  def getDistanceProb(self, trueDistance, noisyDistance):
+    "Returns the probability of a noisy distance given the true distance"
+    if noisyDistance - trueDistance in SONAR_NOISE_VALUES:
+      return 1.0/SONAR_NOISE_RANGE
+    else:
+      return 0
   # ***END REMOVED FOR CONTEST 2***
 
   def getInitialAgentPosition(self, agentIndex):
@@ -275,27 +275,27 @@ class GameState:
     state = self.deepCopy()
 
     # ***BEGIN REMOVED FOR CONTEST 2***
-    # # Adds the sonar signal
-    # pos = state.getAgentPosition(index)
-    # n = state.getNumAgents()
-    # distances = [noisyDistance(pos, state.getAgentPosition(i)) for i in range(n)]
-    # state.agentDistances = distances
-    #
-    # # Remove states of distant opponents
-    # if index in self.blueTeam:
-    #   team = self.blueTeam
-    #   otherTeam = self.redTeam
-    # else:
-    #   otherTeam = self.blueTeam
-    #   team = self.redTeam
-    #
-    # for enemy in otherTeam:
-    #   seen = False
-    #   enemyPos = state.getAgentPosition(enemy)
-    #   for teammate in team:
-    #     if util.manhattanDistance(enemyPos, state.getAgentPosition(teammate)) <= SIGHT_RANGE:
-    #       seen = True
-    #   if not seen: state.data.agentStates[enemy].configuration = None
+    # Adds the sonar signal
+    pos = state.getAgentPosition(index)
+    n = state.getNumAgents()
+    distances = [noisyDistance(pos, state.getAgentPosition(i)) for i in range(n)]
+    state.agentDistances = distances
+
+    # Remove states of distant opponents
+    if index in self.blueTeam:
+      team = self.blueTeam
+      otherTeam = self.redTeam
+    else:
+      otherTeam = self.blueTeam
+      team = self.redTeam
+
+    for enemy in otherTeam:
+      seen = False
+      enemyPos = state.getAgentPosition(enemy)
+      for teammate in team:
+        if util.manhattanDistance(enemyPos, state.getAgentPosition(teammate)) <= SIGHT_RANGE:
+          seen = True
+      if not seen: state.data.agentStates[enemy].configuration = None
     # ***END REMOVED FOR CONTEST 2***
     return state
 
