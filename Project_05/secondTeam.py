@@ -3,6 +3,9 @@ import distanceCalculator
 import random, time, util, sys
 from game import Directions
 import game, capture
+import pickle
+
+
 from util import nearestPoint
 
 
@@ -52,10 +55,8 @@ class ReflexCaptureAgent(CaptureAgent):
 
         # data concerning grid
         self.layout = gameState.data.layout
+        self.enemySpawnPoint = self.layout.getFurthestCorner(self.start)
         self.walls = gameState.getWalls()
-        self.allCoordinates = [(a, b) for a in range(self.layout.width)
-                               for b in range(self.layout.height)]
-        self.allCoordsNoWalls = [(a, b) for (a, b) in self.allCoordinates if not self.walls[a][b]]
 
         # concerning food
         self.foodToDefendList = self.getFoodYouAreDefending(gameState).asList()
@@ -74,21 +75,20 @@ class ReflexCaptureAgent(CaptureAgent):
             if i != self.index:
                 self.partnerIndex = i
         self.enemyAgentsIndices = self.getOpponents(gameState)
-        halfWidth = gameState.data.layout.width // 2
-        self.homeWidthBoundary = halfWidth if self.red else halfWidth + 1
+        halfWidth = (gameState.data.layout.width - 1 ) //2
+        self.homeWidthBoundary = halfWidth if self.red else halfWidth + 1/(sys.maxsize)
 
         # bookkeeping and history-tracking
-        self.actionHistory = [] # useless so far, ...
-        self.foodThreshold = 0  # hardcoded, will experiment with this; might find a way to make it depend on total food available and layout
+        self.foodThreshold = 0  # hardcoded,
 
         # Q-learning parameters
-        self.foodRewardMultiplier = 1  # might also make this dynamic
+        self.foodRewardMultiplier = 10
         self.discount = .9
         self.alpha = .001
-        self.epsilon = 0
-
     def chooseActionComponent(self, gameState: capture.GameState):
         actions = gameState.getLegalActions(self.index)
+        if len(actions) > 1:
+            actions.remove(Directions.STOP)
 
         # You can profile your evaluation time by uncommenting these lines
         # start = time.time()
@@ -131,6 +131,9 @@ class ReflexCaptureAgent(CaptureAgent):
         nextState = gameState.generateSuccessor(self.index, bestAction)
 
         reward = self.getReward(gameState, bestAction, nextState)
+        # get more greedy if we are loosing
+        # if (gameState.getScore() < 0 and self.red) or (gameState.getScore() > 0 and not self.red):
+        #     self.epsilon /= (1 + abs(gameState.getScore()))
 
         self.updateWeights(gameState, bestAction, nextState, reward)
         if util.flipCoin(self.epsilon):
@@ -173,7 +176,7 @@ class ReflexCaptureAgent(CaptureAgent):
         difference = reward + (self.discount * nextQValue) - oldQValue
 
         curFeatures = self.getFeatures(gameState, action)
-        curWeights = self.getWeights(gameState)
+        curWeights = self.getWeights()
 
         if curFeatures is not None and curWeights is not None:
             for feature in curFeatures:
@@ -182,7 +185,7 @@ class ReflexCaptureAgent(CaptureAgent):
 
     def evaluate(self, gameState: capture.GameState, action):
         features = self.getFeatures(gameState, action)
-        weights = self.getWeights(gameState)
+        weights = self.getWeights()
         return features * weights
 
     # temporary
@@ -193,7 +196,7 @@ class ReflexCaptureAgent(CaptureAgent):
         """
         pass
 
-    def getWeights(self, gameState):
+    def getWeights(self):
         """
         Normally, weights do not depend on the gamestate.  They can be either
         a counter or a dictionary.
@@ -220,30 +223,46 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
     # Number all your features so we can keep track
     def registerInitialState(self, gameState: capture.GameState):
+        # Obtained via training and tuning, rounded up
         self.weights = util.Counter({
             'successorScore': 100,
-            'disToFood': -10,
-            'disToGhost': 1000,
-            'disToCap': -40,
-            # 'capScore': 10,
+            'disToFood': -12,
+            'disToGhost': 35,
+            'disToCap': -100,
+            'capScore': 10,
             'returnHome': -5000,
             'isDeadEnd': -2,
+            'disToPartner': 1
         })
+
+        self.epsilon = 0.3
         ReflexCaptureAgent.registerInitialState(self, gameState)
 
     def getFeatures(self, gameState: capture.GameState, action):
 
         features = util.Counter()
         successor = self.getSuccessor(gameState, action)
-        foodList = self.getFood(successor).asList()
-
         newPosition = successor.getAgentPosition(self.index)
+        foodList = self.getFood(successor).asList()
+        # with the way I wrote this so far
+        opps = [successor.getAgentState(i) for i in self.getOpponents(successor)]
+        oppGhosts = [opp for opp in opps if not opp.isPacman and opp.getPosition() is not None]
+        oppGhostPositions = [ghost.getPosition() for ghost in oppGhosts]
+        distsToGhosts = [self.getMazeDistance(newPosition, ghostPos) for ghostPos in oppGhostPositions]
+
+        if len(oppGhosts) > 0:
+            ghostScaredTimer = max([ghost.scaredTimer for ghost in oppGhosts])
+        else:
+            ghostScaredTimer = 0
 
         # Feature 1: Distance To The Nearest Food
         if len(foodList) > 0:  # This should always be True,  but better safe than sorry
             minFoodDistance = min([self.getMazeDistance(newPosition, food) for food in foodList])
             features['disToFood'] = minFoodDistance
-
+            if ghostScaredTimer > 4:
+                return util.Counter({
+                    'disToFood': minFoodDistance
+                })
         # Feature 2: from baseline also
         features['successorScore'] = -len(foodList)
 
@@ -252,35 +271,29 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         if len(capsulePositions) > 0:  # I guess we'll double-check everything now
             minCapDistance = min([self.getMazeDistance(newPosition, capsule) for capsule in capsulePositions])
             features['disToCap'] = minCapDistance
-        if not successor.getAgentState(self.index).isPacman:
-            return features
 
         # Feature 4: Distance To The Nearest Ghost
-        opps = [successor.getAgentState(i) for i in self.getOpponents(successor)]
-
-        # with the way I wrote this so far, this cannot return None since it runs when we are Pacman
-        oppGhosts = [opp for opp in opps if not opp.isPacman and opp.getPosition() is not None]
-
-        oppGhostPositions = [ghost.getPosition() for ghost in oppGhosts]
-        distsToGhosts = [self.getMazeDistance(newPosition, ghostPos) for ghostPos in oppGhostPositions]
-
-        closestGhostDist = -sys.maxsize
         if len(distsToGhosts) > 0:
-            closestGhostDist = min(distsToGhosts)
+            closestGhostDist = ghostScaredTimer * min(distsToGhosts) // self.layout.width
+            features['disToGhost'] = closestGhostDist
 
-        ghostScaredTimer = max([ghost.scaredTimer for ghost in oppGhosts])
-        closestGhostDist = - (ghostScaredTimer * closestGhostDist // self.layout.width)
-        currentThreshold = self.foodThreshold - ((ghostScaredTimer // self.layout.width)*self.foodThreshold)
-        features['disToGhost'] = closestGhostDist
+        currentThreshold = self.foodThreshold
 
-        # Feature 6: I'm still having trouble eating the capsules or I'm freezing up after I eat one.
-        # features['capScore'] = -len(capsulePositions)
+        if len(oppGhosts) > 0:
+            currentThreshold -= ((ghostScaredTimer // self.layout.width) * self.foodThreshold)
+
+        # Feature 6: I'm still having trouble eating the capsules, or I'm freezing up after I eat one.
+        features['capScore'] = -len(capsulePositions)
 
         # Feature 6: there was a variable all along lol
         foodInStomach = gameState.getAgentState(self.index).numCarrying
         if foodInStomach > currentThreshold:
             features['returnHome'] = self.getMazeDistance(newPosition, self.start)
-            features['disToGhost'] *= 2
+
+        if (self.red and newPosition[0] >= self.layout.width * .495) or (not self.red and newPosition[0] <= self.layout.width * .505):
+            partnerState = gameState.getAgentState(self.partnerIndex)
+            features['disToPartner'] = self.getMazeDistance(partnerState.getPosition(), newPosition)
+
 
         # Feature 7: Avoid dead ends
         # legalActionsInSuccessor = successor.getLegalActions(self.index)
@@ -301,7 +314,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
                 return 10
             if ([next_position[0]], [next_position[1]]) in self.getCapsules(nextState):
                 return 20
-
 
         if not self.getFood(gameState)[current_position[0]][current_position[1]] and \
                 not self.getFoodYouAreDefending(gameState)[current_position[0]][current_position[1]]:
@@ -326,7 +338,8 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         else:
             ReflexCaptureAgent.updateWeights(self, gameState, action, nextState, reward)
 
-    def getWeights(self, gameState: capture.GameState):
+
+    def getWeights(self):
         return self.weights
 
 
@@ -339,6 +352,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     """
 
     def registerInitialState(self, gameState: capture.GameState):
+        # Obtained by training and tuning
         self.weights = util.Counter(
             {'numInvaders': -1000,
              'onDefense': 100,
@@ -351,6 +365,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
              'distFromPartnerIfGhost': 1,
              'invaderToClosestCapsule': 2
              })
+        self.epsilon = 0
         ReflexCaptureAgent.registerInitialState(self, gameState)
 
     def evaluate(self, gameState: capture.GameState, action):
@@ -358,7 +373,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         Computes a linear combination of features and feature weights
         """
         features = self.getFeatures(gameState, action)
-        weights = self.getWeights(gameState)
+        weights = self.getWeights()
         return features * weights
 
     def getFeatures(self, gameState: capture.GameState, action):
@@ -393,9 +408,11 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
             features['reverse'] = 1
         # Feature 6
         # nearest position to center
-        watchPosition = util.nearestPoint((self.homeWidthBoundary, gameState.data.layout.height / 2))
-        features['watchDist'] = self.getMazeDistance(newPosition, watchPosition)
-
+        watchPosition = util.nearestPoint((self.homeWidthBoundary, (gameState.data.layout.height-1) / 2))
+        try:
+            features['watchDist'] = self.getMazeDistance(newPosition, watchPosition)
+        except:
+            features['watchDist'] = util.manhattanDistance(newPosition, watchPosition)
         # Feature 7
         features['invaderDanger'] = features['invaderDistance'] * features['numInvaders']
 
@@ -416,7 +433,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
 
         return features
 
-    def invaderClosestToCapsule(self, successor:capture.GameState):
+    def invaderClosestToCapsule(self, successor: capture.GameState):
         """
         Computes the distance between the nearest invader and the closest capsule.
         """
@@ -433,7 +450,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
                 sd = min(sd, self.getMazeDistance(i.getPosition(), c))
         return sd
 
-    def getReward(self, gameState:capture.GameState, action, nextState:capture.GameState):
+    def getReward(self, gameState: capture.GameState, action, nextState: capture.GameState):
         reward = 0
         curPos = gameState.getAgentPosition(self.index)
         if len(self.getFood(gameState).asList()) > len(self.getFood(nextState).asList()):
@@ -441,12 +458,10 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         if action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             next_position = self.getNextPosition(curPos, action)
             opps = self.getOpponents(nextState)
-
             oppsPositions = [nextState.getAgentPosition(opp) for opp in opps]
             if next_position in oppsPositions:
-                return 20 # kill the opps
+                return 20  # kill the opps
         return 0
 
-    def getWeights(self, gameState: capture.GameState):
+    def getWeights(self):
         return self.weights
-

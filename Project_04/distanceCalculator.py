@@ -33,7 +33,7 @@ distances.
 import threading, sys, time, random
 
 class Distancer:
-  def __init__(self, layout, background=True, default=10000):
+  def __init__(self, layout, background=False, default=10000):
     """
     Initialize with Distancer(layout).  Changing default is unnecessary.
 
